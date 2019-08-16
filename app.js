@@ -62,45 +62,62 @@ app.post('/upload', function (req, res) {
     })
 });
 
-app.post('/formData', function (req, res) {
-    upload(req, res, function (err) {
-        if (err instanceof multer.MulterError) {
-            return res.status(500).json(err)
-        } else if (err) {
-            return res.status(500).json(err)
-        }
+app.post('/formData', async function (req, res) {
 
-        app.locals.userData.name = req.body.name,
-            app.locals.userData.email = req.body.email,
-            app.locals.userData.gender = req.body.gender,
-            app.locals.userData.color = req.body.color,
-            app.locals.userData.hasValue = 1,
-            // connect to mongoDB
-            mongoose
-                .connect(db)
-                .then(() => {
-                    console.log('MongoDB Connected');
-                    var ObjectID = require('mongodb').ObjectID;
 
-                    var newUser = {
-                        name :  app.locals.userData.name,
-                        email :  app.locals.userData.email,
-                        gender :  app.locals.userData.gender,
-                    };
 
-                    var conn = mongoose.connection;
-                    conn.collection('users').insertOne(newUser);
-                })
-                .catch(err => {
-                    console.log(err);
-                    console.log('\x1b[31m\x1b[1m MongoDB Not Connected');
+    var isSaveed = true;
+    app.locals.userData.name = req.body.name,
+        app.locals.userData.email = req.body.email,
+        app.locals.userData.gender = req.body.gender,
+        app.locals.userData.color = req.body.color,
+        app.locals.userData.hasValue = 1,
+
+        // connect to mongoDB
+        await mongoose
+            .connect(db)
+            .then(() => {
+                console.log('MongoDB Connected');
+
+
+                var newUser = {
+                    name: app.locals.userData.name,
+                    email: app.locals.userData.email,
+                    gender: app.locals.userData.gender,
+                };
+
+
+                var conn = mongoose.connection;
+
+                // Checking if Email Already Exist 
+
+                conn.collection('users').findOne({ email: newUser.email }, function (err, temp) {
+                    if (temp != null) {
+                        //exists
+                        console.log("User Already Exists");
+                        res.status(404).end();
+                    } else {
+                        //not exist
+                        conn.collection('users').insertOne(newUser);
+                        console.log("User Added into Database");
+                        res.status(200).end();
+                    }
+
                 });
 
+            }
+            )
+            .catch(err => {
+                console.log(err);
+                console.log('\x1b[31m\x1b[1m MongoDB Not Connected');
+            });
 
 
-        res.render('index', { userData })
+    res.render('index', { userData })
 
-    })
+
+
+
 });
 
 app.get('/upload', (req, res) => {
