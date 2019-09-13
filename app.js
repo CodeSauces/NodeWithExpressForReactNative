@@ -5,14 +5,10 @@ var cors = require('cors');
 var bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 
-
 //DB Modals
 require('./models/user.modal')
 // DB Config
 const db = "mongodb://localhost:27017/docYourWays";
-
-
-
 
 app.use(cors())
 app.use(bodyParser.json());
@@ -28,7 +24,6 @@ var storage = multer.diskStorage({
         cb(null, Date.now() + '-' + file.originalname)
     }
 })
-
 
 var upload = multer({ storage: storage }).single('file')
 
@@ -54,7 +49,7 @@ app.locals.userData = {
     hasValue: 0,
 };
 
-mongoose.connect('mongodb://localhost:27017/docYourWays', { userNewUrlParser: true }, (err) => {
+mongoose.connect('mongodb://localhost:27017/docYourWays', { useNewUrlParser: true }, (err) => {
     if (!err) {
         console.log('MongoDB successfully connected')
 
@@ -66,10 +61,12 @@ mongoose.connect('mongodb://localhost:27017/docYourWays', { userNewUrlParser: tr
 //VerifyKey
 app.post('/verifyKey', async function (req, res) {
     var key = req.body.key
+
     // Search if key exist in DB
     await mongoose.connect(db, { userNewUrlParser: true }).then(() => {
         console.log('MongoDB Connected For Verify Key');
-        var conn = mongoose.connection;
+        var conn = mongoose.connection
+
         conn.collection('companies').findOne({
             key: key
         }, function (err, temp) {
@@ -89,8 +86,10 @@ app.post('/verifyKey', async function (req, res) {
     }).catch(err => {
         console.log(err);
         console.log('\x1b[31m\x1b[1m MongoDB Not Connected');
+        console.log()
     });
 })
+
 //Find User Name and Email
 app.post('/isUnameOrEmailExist', async function (req, res) {
     var userModal = {
@@ -297,3 +296,39 @@ app.post('/login', async function (req, res) {
         console.log(err)
     })
 })
+
+
+// server.get('/usersList', function (req, res) {
+//     User.find({}, function (err, users) {
+//         var userMap = {};
+
+//         users.forEach(function (user) {
+//             userMap[user._id] = user;
+//         });
+
+//         res.send(userMap);
+//     });
+// });
+
+//get All packages
+app.get('/getPackages', async function (req, res) {
+    await mongoose.connect(db, { useNewUrlParser: true }).then(() => {
+        console.log('MongoDB Connected For Get Packages');
+        var conn = mongoose.connection;
+        var found = false;
+        var data = [];
+        conn.collection('packages').find({}, async (err, packages) => {
+
+            await packages.forEach(function (package) {
+
+                data.push(package)
+            })
+
+            res.send(data)
+        })
+
+    }).catch(err => {
+        console.log(err)
+    })
+})
+
